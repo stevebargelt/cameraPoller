@@ -105,8 +105,6 @@ func main() {
 		for {
 			select {
 			case <-ticker.C:
-				// elapsed := time.Since(start)
-				// fmt.Println("Elapsed: ", elapsed, " Ticker")
 				fileName := motionCap.MotionCap()
 				if len(fileName) > 0 {
 					photos = append(photos, fileName)
@@ -123,7 +121,6 @@ func main() {
 					}
 					if len(photos) == configuration.PhotosInSet {
 						ticker.Stop()
-						doMePhotos(&photos)
 						litterboxUser, weHaveCat := determineResults(litterboxPicSet)
 						if weHaveCat {
 							directionPredictor.FilePath = litterboxUser.Photo
@@ -145,7 +142,6 @@ func main() {
 					fmt.Printf("We Good. Timeout called but we processed %v pics.\n", configuration.PhotosInSet)
 				} else {
 					fmt.Printf("Timeout called but we processed %v pics.\n", len(photos))
-					doMePhotos(&photos)
 					litterboxUser, weHaveCat := determineResults(litterboxPicSet)
 					if weHaveCat {
 						directionPredictor.FilePath = litterboxUser.Photo
@@ -167,17 +163,6 @@ func main() {
 	}()
 
 	select {}
-
-}
-
-func doMePhotos(photos *[]string) {
-
-	for idx, photo := range *photos {
-		fmt.Printf("fake... id the cat... in %s\n", photo)
-		(*photos)[idx] = "done"
-		time.Sleep(800 * time.Millisecond) //faking the api call
-	}
-	*photos = nil
 
 }
 
