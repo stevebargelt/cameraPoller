@@ -1,0 +1,31 @@
+# Camera
+CAMERA_STILL_PIC_URL:
+CAMERA_MOTION_URL:
+CAMERA_LOGIN_URL:
+CAMERA_USERNAME: cameraman
+CAMERA_PASSWORD: correcthorsebatterystaple
+
+# Application
+CAPTURE_FOLDER: /pics
+PROCESSED_FOLDER: /pics/processed
+NUMBER_PHOTOS_IN_SET: 5
+TIMEOUT: 10
+HTTP_RETRY_COUNT: 50
+
+########## VISION ##########
+# Project ID
+#     https://www.customvision.ai/Select the Project, then the Settings Gear Icon
+CUSTOM_VISION_PROJECT_ID: 4280d695-a486-42db-b3ec-26d8350d5669
+CUSTOM_VISION_PROJECT_DIRECTION_ID: 4280d695-a486-42db-b3ec-26d8350d5669
+# Iteration ID
+#    https://www.customvision.ai/ Select the Project, then select performance
+CUSTOM_VISION_ITERATION_ID: 4280d695-a486-42db-b3ec-26d8350d5669
+CUSTOM_VISION_ITERATION_DIRECTION_ID: 4280d695-a486-42db-b3ec-26d8350d5669
+# prediction
+#    https://portal.azure.com -> Goto the Prediction Cognitive Services - Resrouce, then in Keys or Quickstart you can find the endpoint and key(S)
+CUSTOM_VISION_ENDPOINT: https://your-project-name-prediction.cognitiveservices.azure.com/
+CUSTOM_VISION_PREDICTION_KEY: f84a2009a9da2d4c4d1640f709b0debc
+
+# Firestore
+GOOGLE_FIREBASE_CREDENTIAL_FILE: /Users/stevebargelt/Downloads/google-project-creds.json
+GOOGLE_FIRESTORE_COLLECTION: test
