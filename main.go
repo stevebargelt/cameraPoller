@@ -11,7 +11,7 @@ import (
 	"cloud.google.com/go/firestore"
 	firebase "firebase.google.com/go"
 	"github.com/Azure/azure-sdk-for-go/services/cognitiveservices/v1.1/customvision/prediction"
-	"github.com/hashicorp/go-retryablehttp"
+	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	uuid "github.com/satori/go.uuid"
 	"github.com/spf13/viper"
 	"google.golang.org/api/option"
@@ -31,6 +31,15 @@ type LitterboxUser struct {
 }
 
 func main() {
+
+	// f, err := os.OpenFile("testlogfile", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	// if err != nil {
+	// 	log.Fatalf("error opening file: %v", err)
+	// }
+	// defer f.Close()
+
+	// log.SetOutput(f)
+	// log.Println("This is a test log entry")
 
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
@@ -70,6 +79,8 @@ func main() {
 	predictor := prediction.New(configuration.PredictionKey, configuration.EndpointURL)
 
 	client := retryablehttp.NewClient() // http.Client{}
+	//Comment out the following line for debug logging output
+	//client.Logger = nil
 	client.Backoff = retryablehttp.LinearJitterBackoff
 	client.RetryWaitMin = 1 * time.Second
 	client.RetryWaitMax = 5 * time.Second
@@ -94,7 +105,6 @@ func main() {
 	directionPredictor.IterationID = iterationIDDirection
 	directionPredictor.Predictor = predictor
 
-	var photos []string
 	var litterboxPicSet []LitterboxUser
 	ticker := time.NewTicker(1 * time.Second)
 	timeout := make(chan bool, 1)
@@ -107,7 +117,6 @@ func main() {
 			case <-ticker.C:
 				fileName := motionCap.MotionCap()
 				if len(fileName) > 0 {
-					photos = append(photos, fileName)
 					catPredictor.FilePath = fileName
 					results := catPredictor.Predict()
 					highestProbabilityTag := processCatResults(results, fileName)
@@ -119,17 +128,17 @@ func main() {
 							timeout <- true
 						}()
 					}
-					if len(photos) == configuration.PhotosInSet {
+					if len(litterboxPicSet) == configuration.PhotosInSet {
 						ticker.Stop()
-						litterboxUser, weHaveCat := determineResults(litterboxPicSet)
-						if weHaveCat {
-							directionPredictor.FilePath = litterboxUser.Photo
-							directionResults := directionPredictor.Predict()
-							setDirection(directionResults, &litterboxUser)
-						}
-						doStuffWithResult(litterboxUser, configuration.FirebaseCredentials, configuration.FirestoreCollection, weHaveCat)
-						moveProcessedFiles(litterboxPicSet, configuration.ProcessedFolder)
-						litterboxPicSet = nil
+						// litterboxUser, weHaveCat := determineResults(litterboxPicSet)
+						// if weHaveCat {
+						// 	directionPredictor.FilePath = litterboxUser.Photo
+						// 	directionResults := directionPredictor.Predict()
+						// 	setDirection(directionResults, &litterboxUser)
+						// }
+						// doStuffWithResult(litterboxUser, configuration.FirebaseCredentials, configuration.FirestoreCollection, weHaveCat)
+						// moveProcessedFiles(litterboxPicSet, configuration.ProcessedFolder)
+						// litterboxPicSet = nil
 					}
 				}
 			// case <-haveIdentity:
@@ -138,10 +147,11 @@ func main() {
 			// 	ticker = time.NewTicker(1 * time.Second)
 			case <-timeout:
 				ticker.Stop()
-				if len(photos) == 0 {
+				if len(litterboxPicSet) == 0 {
 					fmt.Printf("We Good. Timeout called but we processed %v pics.\n", configuration.PhotosInSet)
 				} else {
-					fmt.Printf("Timeout called but we processed %v pics.\n", len(photos))
+					ticker.Stop()
+					fmt.Printf("Timeout called but we only processed %v pics.\n", len(litterboxPicSet))
 					litterboxUser, weHaveCat := determineResults(litterboxPicSet)
 					if weHaveCat {
 						directionPredictor.FilePath = litterboxUser.Photo
