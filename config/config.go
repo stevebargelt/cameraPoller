@@ -20,4 +20,6 @@ type Configuration struct {
 	ProcessedFolder      string `mapstructure:"PROCESSED_FOLDER"`
 	FirebaseCredentials  string `mapstructure:"GOOGLE_FIREBASE_CREDENTIAL_FILE"`
 	FirestoreCollection  string `mapstructure:"GOOGLE_FIRESTORE_COLLECTION"`
+	StorageBucket        string `mapstructure:"STORAGE_BUCKET"`
+	StorageFolder        string `mapstructure:"STORAGE_FOLDER"`
 }

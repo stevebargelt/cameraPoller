@@ -18,6 +18,7 @@ import (
 
 	camera "github.com/stevebargelt/cameraPoller/camera"
 	config "github.com/stevebargelt/cameraPoller/config"
+	"github.com/stevebargelt/cameraPoller/storage"
 	"github.com/stevebargelt/cameraPoller/vision"
 )
 
@@ -31,15 +32,6 @@ type LitterboxUser struct {
 }
 
 func main() {
-
-	// f, err := os.OpenFile("testlogfile", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	// if err != nil {
-	// 	log.Fatalf("error opening file: %v", err)
-	// }
-	// defer f.Close()
-
-	// log.SetOutput(f)
-	// log.Println("This is a test log entry")
 
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
@@ -79,8 +71,8 @@ func main() {
 	predictor := prediction.New(configuration.PredictionKey, configuration.EndpointURL)
 
 	client := retryablehttp.NewClient() // http.Client{}
-	//Comment out the following line for debug logging output
-	//client.Logger = nil
+	//Comment out the following line for debug logging output from retryableHttp
+	client.Logger = nil
 	client.Backoff = retryablehttp.LinearJitterBackoff
 	client.RetryWaitMin = 1 * time.Second
 	client.RetryWaitMax = 5 * time.Second
@@ -130,38 +122,20 @@ func main() {
 					}
 					if len(litterboxPicSet) == configuration.PhotosInSet {
 						ticker.Stop()
-						// litterboxUser, weHaveCat := determineResults(litterboxPicSet)
-						// if weHaveCat {
-						// 	directionPredictor.FilePath = litterboxUser.Photo
-						// 	directionResults := directionPredictor.Predict()
-						// 	setDirection(directionResults, &litterboxUser)
-						// }
-						// doStuffWithResult(litterboxUser, configuration.FirebaseCredentials, configuration.FirestoreCollection, weHaveCat)
-						// moveProcessedFiles(litterboxPicSet, configuration.ProcessedFolder)
-						// litterboxPicSet = nil
 					}
 				}
-			// case <-haveIdentity:
-			// 	fmt.Println("We IDd the cat")
-			// 	fmt.Println("Re-Starting Ticker")
-			// 	ticker = time.NewTicker(1 * time.Second)
 			case <-timeout:
 				ticker.Stop()
-				if len(litterboxPicSet) == 0 {
-					fmt.Printf("We Good. Timeout called but we processed %v pics.\n", configuration.PhotosInSet)
-				} else {
-					ticker.Stop()
-					fmt.Printf("Timeout called but we only processed %v pics.\n", len(litterboxPicSet))
-					litterboxUser, weHaveCat := determineResults(litterboxPicSet)
-					if weHaveCat {
-						directionPredictor.FilePath = litterboxUser.Photo
-						directionResults := directionPredictor.Predict()
-						setDirection(directionResults, &litterboxUser)
-					}
-					doStuffWithResult(litterboxUser, configuration.FirebaseCredentials, configuration.FirestoreCollection, weHaveCat)
-					moveProcessedFiles(litterboxPicSet, configuration.ProcessedFolder)
-					litterboxPicSet = nil
+				fmt.Printf("Timeout called. Processing %v pics.\n", len(litterboxPicSet))
+				litterboxUser, weHaveCat := determineResults(litterboxPicSet)
+				if weHaveCat {
+					directionPredictor.FilePath = litterboxUser.Photo
+					directionResults := directionPredictor.Predict()
+					setDirection(directionResults, &litterboxUser)
 				}
+				doStuffWithResult(litterboxUser, configuration.StorageBucket, configuration.StorageFolder, configuration.FirebaseCredentials, configuration.FirestoreCollection, weHaveCat)
+				moveProcessedFiles(litterboxPicSet, configuration.ProcessedFolder)
+				litterboxPicSet = nil
 				fmt.Println("Re-Starting Ticker")
 				ticker = time.NewTicker(1 * time.Second)
 			case <-quit:
@@ -176,14 +150,23 @@ func main() {
 
 }
 
-func doStuffWithResult(litterboxUser LitterboxUser, firebaseCredentials string, firestoreCollection string, weHaveCat bool) {
+func doStuffWithResult(litterboxUser LitterboxUser, bucket string, folder string,
+	firebaseCredentials string, firestoreCollection string, weHaveCat bool) (string, error) {
 
 	if weHaveCat {
-		fmt.Printf("I am %v%% sure that it was %s and I am ", litterboxUser.NameProbability*100, litterboxUser.Name)
-		fmt.Printf("%v%% sure that they were headed %s the catbox!\n", litterboxUser.DirectionProbability*100, litterboxUser.Direction)
+		url, err := uploadImage(bucket, folder, litterboxUser.Photo, firebaseCredentials)
+		if err != nil {
+			return "", err
+		}
+		litterboxUser.Photo = url
+		fmt.Printf("I am %.2f%% sure that it was %s and I am ", litterboxUser.NameProbability*100, litterboxUser.Name)
+		fmt.Printf("%.2f%% sure that they were headed %s the catbox!\n", litterboxUser.DirectionProbability*100, litterboxUser.Direction)
+		fmt.Printf("URL: %s\n", litterboxUser.Photo)
 		addLitterBoxTripToFirestore(litterboxUser, firebaseCredentials, firestoreCollection)
+		return url, err
 	} else {
 		fmt.Printf("I am %v%% sure that we had a false motion event!\n", litterboxUser.NameProbability*100)
+		return "", nil
 	}
 }
 
@@ -272,6 +255,14 @@ func addLitterBoxTripToFirestore(user LitterboxUser, firebaseCredentials string,
 	if err != nil {
 		log.Fatalf("Failed adding litterbox trip: %v", err)
 	}
+}
+
+func uploadImage(bucket string, folder string, fileName string, firebaseCredentials string) (string, error) {
+
+	storage := storage.Storage{StorageBucketName: bucket, StorageFolderName: folder,
+		FirebaseCredentials: firebaseCredentials}
+
+	return storage.Upload(fileName)
 }
 
 func moveProcessedFiles(litterboxPicSet []LitterboxUser, processedFolder string) {
