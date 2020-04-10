@@ -24,6 +24,7 @@ import (
 
 // LitterboxUser = defines the attributes of a cat using the litterbox
 type LitterboxUser struct {
+	ID                   string
 	Name                 string
 	NameProbability      float64
 	Direction            string
@@ -172,16 +173,25 @@ func doStuffWithResult(litterboxUser LitterboxUser, bucket string, folder string
 
 func processCatResults(results prediction.ImagePrediction, fileName string) LitterboxUser {
 
-	//Process the results of ONE image... loop through the tag predictions in the image
-
-	litterboxUser := LitterboxUser{"Negative", 0.00, "", 0.00, fileName}
+	//Process the results of ONE image... loop through the TAGS that were predicted for the image
+	litterboxUser := LitterboxUser{"", "Negative", 0.00, "", 0.00, fileName}
 	for _, prediction := range *results.Predictions {
 		fmt.Printf("\t%s: %.2f%%\n", *prediction.TagName, *prediction.Probability*100)
-
 		//of the tags in the model pick the highest probability
-		// TODO: Use a slice or enum for the direction, no magic strings and decouple the directions
 		if *prediction.Probability > litterboxUser.NameProbability {
-			litterboxUser.Name = *prediction.TagName
+			switch *prediction.TagName {
+			case "Bear":
+				litterboxUser.ID = "YGXCt5ZCCY3ARYSehi3e"
+				litterboxUser.Name = "Bear"
+			case "Nara":
+				litterboxUser.ID = "NiDDDeQeNpBrHby3HJ7N"
+				litterboxUser.Name = "Nara"
+			case "Negative":
+				litterboxUser.ID = "Neg"
+				litterboxUser.Name = "Negative"
+			default:
+				log.Fatalf("Bad cat found: %s", *prediction.TagName)
+			}
 			litterboxUser.NameProbability = *prediction.Probability
 			litterboxUser.Photo = fileName
 		}
@@ -230,7 +240,6 @@ func determineResults(litterboxPicSet []LitterboxUser) (LitterboxUser, bool) {
 	return litterboxPicSet[highestNegIndex], weHaveCat
 }
 
-// Next Steps?
 func addLitterBoxTripToFirestore(user LitterboxUser, firebaseCredentials string, firestoreCollection string) {
 	ctx := context.Background()
 	sa := option.WithCredentialsFile(firebaseCredentials)
@@ -244,8 +253,9 @@ func addLitterBoxTripToFirestore(user LitterboxUser, firebaseCredentials string,
 		log.Fatalln(err)
 	}
 	defer client.Close()
-	//TODO: Find cat first. Add if not found?
-	_, _, err = client.Collection(firestoreCollection).Doc(user.Name).Collection("LitterTrips").Add(ctx, map[string]interface{}{
+	_, _, err = client.Collection(firestoreCollection).Add(ctx, map[string]interface{}{
+		"CatID":                user.ID,
+		"CatName":              user.Name,
 		"Probability":          user.NameProbability,
 		"Direction":            user.Direction,
 		"DirectionProbability": user.DirectionProbability,

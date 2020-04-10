@@ -2,6 +2,8 @@ package config
 
 // Configuration for app
 type Configuration struct {
+	CatID                string `mapstructure:"CAT_ID"`
+	CatName              string `mapstructure:"CAT_NAME"`
 	CameraStillPicURL    string `mapstructure:"CAMERA_STILL_PIC_URL"`
 	CameraMotionURL      string `mapstructure:"CAMERA_MOTION_URL"`
 	CameraLoginURL       string `mapstructure:"CAMERA_LOGIN_URL"`
