@@ -74,10 +74,10 @@ func main() {
 	client := retryablehttp.NewClient() // http.Client{}
 	//Comment out the following line for debug logging output from retryableHttp
 	client.Logger = nil
-	client.Backoff = retryablehttp.LinearJitterBackoff
-	client.RetryWaitMin = 1 * time.Second
-	client.RetryWaitMax = 5 * time.Second
-	client.RetryMax = 50 // we know the most likely reason is that the network is down (rebooted hardware)
+	// client.Backoff = retryablehttp.LinearJitterBackoff
+	//client.RetryWaitMin = 3 * time.Second
+	//client.RetryWaitMax = 10 * time.Second
+	client.RetryMax = configuration.HTTPRetryCount // we know the most likely reason is that the network is down (rebooted hardware)
 
 	motionCap := new(camera.Motion)
 	motionCap.Client = client
