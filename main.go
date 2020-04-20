@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"path"
 	"time"
@@ -12,12 +13,14 @@ import (
 	firebase "firebase.google.com/go"
 	"github.com/Azure/azure-sdk-for-go/services/cognitiveservices/v1.1/customvision/prediction"
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	uuid "github.com/satori/go.uuid"
 	"github.com/spf13/viper"
 	"google.golang.org/api/option"
 
 	camera "github.com/stevebargelt/cameraPoller/camera"
 	config "github.com/stevebargelt/cameraPoller/config"
+	"github.com/stevebargelt/cameraPoller/metrics"
 	"github.com/stevebargelt/cameraPoller/storage"
 	"github.com/stevebargelt/cameraPoller/vision"
 )
@@ -34,10 +37,17 @@ type LitterboxUser struct {
 
 func main() {
 
+	metricService, err := metrics.NewPrometheusService()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	// motionMetric := metrics.NewMotion("motion")
+	// visionMetric := metrics.NewVision("cat", "http://url")
+
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(".") // look for config in the working directory
-	err := viper.ReadInConfig()
+	err = viper.ReadInConfig()
 	if err != nil {
 		panic(fmt.Errorf("fatal error config file: %s ", err))
 	}
@@ -108,10 +118,10 @@ func main() {
 		for {
 			select {
 			case <-ticker.C:
-				fileName := motionCap.MotionCap()
+				fileName := motionCap.MotionCap(metricService)
 				if len(fileName) > 0 {
 					catPredictor.FilePath = fileName
-					results := catPredictor.Predict()
+					results := catPredictor.Predict(metricService, "cat")
 					highestProbabilityTag := processCatResults(results, fileName)
 					litterboxPicSet = append(litterboxPicSet, highestProbabilityTag)
 					// If this is the first photo then set a timer so we don't wait indef for n (configuration.PhotosInSet) photos...
@@ -131,7 +141,7 @@ func main() {
 				litterboxUser, weHaveCat := determineResults(litterboxPicSet)
 				if weHaveCat {
 					directionPredictor.FilePath = litterboxUser.Photo
-					directionResults := directionPredictor.Predict()
+					directionResults := directionPredictor.Predict(metricService, "direction")
 					setDirection(directionResults, &litterboxUser)
 				}
 				doStuffWithResult(litterboxUser, configuration.StorageBucket, configuration.StorageFolder, configuration.FirebaseCredentials, configuration.FirestoreCollection, weHaveCat)
@@ -147,7 +157,10 @@ func main() {
 		}
 	}()
 
-	select {}
+	// select {}
+
+	http.Handle("/metrics", promhttp.Handler())
+	http.ListenAndServe(":2112", nil)
 
 }
 

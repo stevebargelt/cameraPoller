@@ -8,9 +8,11 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/hashicorp/go-retryablehttp"
+	"github.com/stevebargelt/cameraPoller/metrics"
 )
 
 // Motion is an object for motion capture
@@ -48,13 +50,15 @@ type motionResponse struct {
 }
 
 //MotionCap - captures motion from camera and writes an image to file
-func (m *Motion) MotionCap() string {
+func (m *Motion) MotionCap(mService metrics.UseCase) string {
 
 	var motionRequest [1]motionRequest
 	motionRequest[0].Cmd = "GetMdState"
 	motionRequest[0].Action = 0
 	motionRequest[0].Param.Channel = 0
 
+	appMetric := metrics.NewCamera("motion")
+	appMetric.Started()
 	var motionRequestJSON, err2 = json.Marshal(motionRequest)
 	if err2 != nil {
 		panic(err2)
@@ -67,6 +71,9 @@ func (m *Motion) MotionCap() string {
 	if err != nil {
 		panic(err)
 	}
+	appMetric.Finished()
+	appMetric.StatusCode = strconv.Itoa(response.StatusCode)
+	mService.SaveCamera(appMetric)
 	defer response.Body.Close()
 	body, _ := ioutil.ReadAll(response.Body)
 	var motionResp []motionResponse
