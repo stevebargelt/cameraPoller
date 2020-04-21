@@ -58,8 +58,24 @@ func (v *Vision) Finished() {
 	v.Duration = time.Since(v.StartedAt).Seconds()
 }
 
+//Cat Metrics
+type Cat struct {
+	Name        string
+	Probability string
+	Direction   string
+	DirProb     string
+}
+
+//NewCat create a new Cat Call
+func NewCat(name string) *Cat {
+	return &Cat{
+		Name: name,
+	}
+}
+
 //UseCase definition
 type UseCase interface {
 	SaveCamera(m *Camera)
 	SaveVision(v *Vision)
+	IncrementCat(c *Cat)
 }

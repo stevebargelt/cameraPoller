@@ -8,6 +8,7 @@ import (
 type Service struct {
 	cameraHistogram *prometheus.HistogramVec
 	visionHistogram *prometheus.HistogramVec
+	catCounter      *prometheus.CounterVec
 }
 
 //NewPrometheusService creates a new prometheus service
@@ -27,9 +28,16 @@ func NewPrometheusService() (*Service, error) {
 		Buckets:   prometheus.DefBuckets,
 	}, []string{"name", "statuscode"})
 
+	cat := prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "cat",
+		Name:      "littertrip_count",
+		Help:      "Count of cat littertrips.",
+	}, []string{"name", "probability", "direction"})
+
 	s := &Service{
 		cameraHistogram: camera,
 		visionHistogram: prediction,
+		catCounter:      cat,
 	}
 
 	err := prometheus.Register(s.cameraHistogram)
@@ -41,6 +49,12 @@ func NewPrometheusService() (*Service, error) {
 	if err != nil && err.Error() != "duplicate metrics collector registration attempted" {
 		return nil, err
 	}
+
+	err = prometheus.Register(s.catCounter)
+	if err != nil && err.Error() != "duplicate metrics collector registration attempted" {
+		return nil, err
+	}
+
 	return s, nil
 }
 
@@ -55,4 +69,9 @@ func (s *Service) SaveVision(v *Vision) {
 //SaveCamera send metrics to server
 func (s *Service) SaveCamera(c *Camera) {
 	s.cameraHistogram.WithLabelValues(c.Name, c.StatusCode).Observe(c.Duration)
+}
+
+//IncrementCat metrics to server
+func (s *Service) IncrementCat(c *Cat) {
+	s.catCounter.WithLabelValues(c.Name, c.Probability, c.Direction).Inc()
 }

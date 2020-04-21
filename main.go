@@ -41,8 +41,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	// motionMetric := metrics.NewMotion("motion")
-	// visionMetric := metrics.NewVision("cat", "http://url")
 
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
@@ -144,7 +142,8 @@ func main() {
 					directionResults := directionPredictor.Predict(metricService, "direction")
 					setDirection(directionResults, &litterboxUser)
 				}
-				doStuffWithResult(litterboxUser, configuration.StorageBucket, configuration.StorageFolder, configuration.FirebaseCredentials, configuration.FirestoreCollection, weHaveCat)
+				doStuffWithResult(litterboxUser, configuration.StorageBucket, configuration.StorageFolder,
+					configuration.FirebaseCredentials, configuration.FirestoreCollection, weHaveCat, metricService)
 				moveProcessedFiles(litterboxPicSet, configuration.ProcessedFolder)
 				litterboxPicSet = nil
 				fmt.Println("Re-Starting Ticker")
@@ -165,9 +164,15 @@ func main() {
 }
 
 func doStuffWithResult(litterboxUser LitterboxUser, bucket string, folder string,
-	firebaseCredentials string, firestoreCollection string, weHaveCat bool) (string, error) {
+	firebaseCredentials string, firestoreCollection string, weHaveCat bool, mservice metrics.UseCase) (string, error) {
 
 	if weHaveCat {
+		appMetric := metrics.NewCat(litterboxUser.Name)
+		appMetric.Probability = fmt.Sprintf("%f", litterboxUser.NameProbability)
+		appMetric.Direction = litterboxUser.Direction
+		appMetric.DirProb = fmt.Sprintf("%f", litterboxUser.DirectionProbability)
+		mservice.IncrementCat(appMetric)
+
 		url, err := uploadImage(bucket, folder, litterboxUser.Photo, firebaseCredentials)
 		if err != nil {
 			return "", err
@@ -178,10 +183,14 @@ func doStuffWithResult(litterboxUser LitterboxUser, bucket string, folder string
 		fmt.Printf("URL: %s\n", litterboxUser.Photo)
 		addLitterBoxTripToFirestore(litterboxUser, firebaseCredentials, firestoreCollection)
 		return url, err
-	} else {
-		fmt.Printf("I am %v%% sure that we had a false motion event!\n", litterboxUser.NameProbability*100)
-		return "", nil
 	}
+
+	fmt.Printf("I am %v%% sure that we had a false motion event!\n", litterboxUser.NameProbability*100)
+	appMetric := metrics.NewCat("Negative")
+	appMetric.Probability = fmt.Sprintf("%f", litterboxUser.NameProbability)
+	mservice.IncrementCat(appMetric)
+	return "", nil
+
 }
 
 func processCatResults(results prediction.ImagePrediction, fileName string) LitterboxUser {
