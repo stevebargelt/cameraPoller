@@ -57,13 +57,12 @@ func (m *Motion) MotionCap(mService metrics.UseCase) string {
 	motionRequest[0].Action = 0
 	motionRequest[0].Param.Channel = 0
 
-	appMetric := metrics.NewCamera("motion")
-	appMetric.Started()
 	var motionRequestJSON, err2 = json.Marshal(motionRequest)
 	if err2 != nil {
 		panic(err2)
 	}
-	// fmt.Printf("This is m: %v\n\n", m)
+	appMetric := metrics.NewCamera("motion")
+	appMetric.Started()
 	request, _ := retryablehttp.NewRequest("GET", m.CameraMotionURL+m.Token, bytes.NewBuffer(motionRequestJSON))
 	request.Header.Set("Content-type", "application/json")
 
@@ -92,7 +91,7 @@ func (m *Motion) MotionCap(mService metrics.UseCase) string {
 		if state == 1 {
 			fmt.Printf("Motion State: %v \n", state)
 			file := createFile(m.CaptureFolder)
-			putFile(file, m.CameraStillPicURL, httpClient())
+			putFile(file, m.CameraStillPicURL, httpClient(), mService)
 			return file.Name()
 		}
 	}
@@ -108,18 +107,25 @@ func buildFileName() string {
 	return time.Now().Format("20060102150405")
 }
 
-func putFile(file *os.File, stillPicURL string, client *http.Client) {
+func putFile(file *os.File, stillPicURL string, client *http.Client, mService metrics.UseCase) {
+
+	appMetric := metrics.NewCamera("stillcapture")
+	appMetric.Started()
 	resp, err := client.Get(stillPicURL)
 	if err != nil {
 		panic(err)
 	}
+	appMetric.Finished()
+	appMetric.StatusCode = strconv.Itoa(resp.StatusCode)
+	mService.SaveCamera(appMetric)
+
 	defer resp.Body.Close()
 	_, err = io.Copy(file, resp.Body)
 	defer file.Close()
 	if err != nil {
 		panic(err)
 	}
-	//fmt.Printf("Just Downloaded a file with size %d", size)
+
 }
 
 func httpClient() *http.Client {
