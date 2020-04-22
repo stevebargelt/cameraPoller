@@ -32,7 +32,7 @@ func NewPrometheusService() (*Service, error) {
 		Namespace: "cat",
 		Name:      "littertrip_count",
 		Help:      "Count of cat littertrips.",
-	}, []string{"name", "probability", "direction"})
+	}, []string{"name", "direction"})
 
 	s := &Service{
 		cameraHistogram: camera,
@@ -73,5 +73,5 @@ func (s *Service) SaveCamera(c *Camera) {
 
 //IncrementCat metrics to server
 func (s *Service) IncrementCat(c *Cat) {
-	s.catCounter.WithLabelValues(c.Name, c.Probability, c.Direction).Inc()
+	s.catCounter.WithLabelValues(c.Name, c.Direction).Inc()
 }

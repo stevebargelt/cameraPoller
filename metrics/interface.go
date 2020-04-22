@@ -60,10 +60,8 @@ func (v *Vision) Finished() {
 
 //Cat Metrics
 type Cat struct {
-	Name        string
-	Probability string
-	Direction   string
-	DirProb     string
+	Name      string
+	Direction string
 }
 
 //NewCat create a new Cat Call

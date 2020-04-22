@@ -168,9 +168,7 @@ func doStuffWithResult(litterboxUser LitterboxUser, bucket string, folder string
 
 	if weHaveCat {
 		appMetric := metrics.NewCat(litterboxUser.Name)
-		appMetric.Probability = fmt.Sprintf("%f", litterboxUser.NameProbability)
 		appMetric.Direction = litterboxUser.Direction
-		appMetric.DirProb = fmt.Sprintf("%f", litterboxUser.DirectionProbability)
 		mservice.IncrementCat(appMetric)
 
 		url, err := uploadImage(bucket, folder, litterboxUser.Photo, firebaseCredentials)
@@ -187,7 +185,6 @@ func doStuffWithResult(litterboxUser LitterboxUser, bucket string, folder string
 
 	fmt.Printf("I am %v%% sure that we had a false motion event!\n", litterboxUser.NameProbability*100)
 	appMetric := metrics.NewCat("Negative")
-	appMetric.Probability = fmt.Sprintf("%f", litterboxUser.NameProbability)
 	mservice.IncrementCat(appMetric)
 	return "", nil
 
