@@ -300,9 +300,10 @@ func moveProcessedFiles(litterboxPicSet []LitterboxUser, processedFolder string)
 		//fmt.Printf("Photo: %s\n", litterboxUser.Photo)
 		_, file := path.Split(litterboxUser.Photo)
 		newpath := path.Join(processedFolder, file)
+		log.Printf("Moving %x to %s\n", litterboxUser.Photo, newpath)
 		err := os.Rename(litterboxUser.Photo, newpath)
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 		}
 	}
 }

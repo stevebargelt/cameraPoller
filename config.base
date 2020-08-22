@@ -1,0 +1,38 @@
+# Camera
+CAMERA_STILL_PIC_URL: http://10.0.0.207/cgi-bin/api.cgi?cmd=Snap&amp;channel=0&amp;rs=wuuPhkmUCeI9WG7C&amp;user=homeassistant&amp;password=devoid-travel-rogue-hologram
+CAMERA_MOTION_URL: http://10.0.0.207/cgi-bin/api.cgi?token=
+CAMERA_LOGIN_URL: http://10.0.0.207/cgi-bin/api.cgi?cmd=Login&token=null
+CAMERA_USERNAME: homeassistant
+CAMERA_PASSWORD: devoid-travel-rogue-hologram
+
+# Application
+CAPTURE_FOLDER: /Users/{{FOLDER}}/catsPoller/
+PROCESSED_FOLDER: /Users/{{FOLDER}}/catsPoller/processed
+NUMBER_PHOTOS_IN_SET: 5
+TIMEOUT: 10
+HTTP_RETRY_COUNT: 100
+
+########## VISION ##########
+# Project ID
+#     https://www.customvision.ai/Select the Project, then the Settings Gear Icon
+CUSTOM_VISION_PROJECT_ID: 5125af06-be99-49e8-9478-adb7f944c070
+CUSTOM_VISION_PROJECT_DIRECTION_ID: ce4c5b96-f505-4e21-966d-2715ad03ab86
+# Iteration ID
+#    https://www.customvision.ai/ Select the Project, then select performance
+CUSTOM_VISION_ITERATION_ID: 1e6af908-8ede-4c57-8e87-e4f6867d576c
+CUSTOM_VISION_ITERATION_DIRECTION_ID: e3363dde-8050-43c9-a552-6a729b618d40
+# prediction
+#    https://portal.azure.com -> Goto the Prediction Cognitive Services - Resrouce, then in Keys or Quickstart you can find the endpoint and key(S)
+CUSTOM_VISION_ENDPOINT: https://mycatsvision-prediction.cognitiveservices.azure.com/
+CUSTOM_VISION_PREDICTION_KEY: 4a2009a9da2d4cf89b0debc4d1640f70
+
+# Firestore
+GOOGLE_FIREBASE_CREDENTIAL_FILE: /Users/{{FOLDER}}/Downloads/mycats-ba2ef-2f24ef007822.json
+GOOGLE_FIRESTORE_COLLECTION: litterTrips
+
+# STORAGE
+STORAGE_BUCKET: mycats-ba2ef.appspot.com
+STORAGE_FOLDER: test
+
+# Test Configuration
+CAPTURE_FOLDER_TEST: /Users/{{FOLDER}}/go/src/github.com/stevebargelt/cameraPoller/integrationtests/testdata/
