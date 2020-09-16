@@ -15,7 +15,7 @@ main
 
 env.sh
 config.yaml
-config.
+config.base
 deploy_prod.sh
 test.sh
 

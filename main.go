@@ -254,6 +254,9 @@ func determineResults(litterboxPicSet []LitterboxUser) (LitterboxUser, bool) {
 		}
 	}
 	if weHaveCat {
+		if highestCatProbability < 0.85 {
+			weHaveCat = false
+		}
 		return litterboxPicSet[highestCatIndex], weHaveCat
 	}
 	return litterboxPicSet[highestNegIndex], weHaveCat
