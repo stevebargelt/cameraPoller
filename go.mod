@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go/firestore v1.2.0
 	cloud.google.com/go/storage v1.10.0
 	firebase.google.com/go v3.12.1+incompatible
-	github.com/Azure/azure-sdk-for-go v42.2.0+incompatible
+	github.com/Azure/azure-sdk-for-go v42.3.0+incompatible
 	github.com/Azure/go-autorest/autorest v0.10.1 // indirect
 	github.com/hashicorp/go-retryablehttp v0.6.6
 	github.com/prometheus/client_golang v1.6.0
