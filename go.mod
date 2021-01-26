@@ -12,5 +12,5 @@ require (
 	github.com/prometheus/client_golang v1.9.0
 	github.com/satori/go.uuid v1.2.0
 	github.com/spf13/viper v1.7.1
-	google.golang.org/api v0.36.0
+	google.golang.org/api v0.37.0
 )
